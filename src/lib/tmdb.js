@@ -33,6 +33,18 @@ export const fetchTopRatedMovies = async () => {
   return data.results;
 };
 
+export const fetchMovieDetails = async (movieId) => {
+  const { data } = await tmdbApi.get(`/movie/${movieId}`, {
+    params: { append_to_response: 'videos,credits,similar,recommendations' }
+  });
+  return data;
+};
+
+export const fetchMovieVideos = async (movieId) => {
+  const { data } = await tmdbApi.get(`/movie/${movieId}/videos`);
+  return data.results;
+};
+
 export const searchMovies = async (query) => {
   if (!query) return [];
   const { data } = await tmdbApi.get('/search/movie', {

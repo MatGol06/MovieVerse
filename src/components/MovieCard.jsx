@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card"
 import { Plus, Check, Trash, Play } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useNavigate } from "react-router-dom"
 import { addToWatchlist } from "../lib/api"
 import { useUserStore } from "../store/userStore"
 import { useState } from "react"
@@ -8,6 +9,7 @@ import { useState } from "react"
 export function MovieCard({ movie, isWatchlistMode = false, onRemove = null, onPlay }) {
   const queryClient = useQueryClient();
   const userId = useUserStore((state) => state.userId);
+  const navigate = useNavigate();
   const [showSuccess, setShowSuccess] = useState(false);
 
   const movieId = movie.id || movie.movie_id;
@@ -46,9 +48,13 @@ export function MovieCard({ movie, isWatchlistMode = false, onRemove = null, onP
     if (onPlay) onPlay(movieId, movie.title);
   }
 
+  const navigateToDetail = () => {
+    navigate(`/movie/${movieId}`);
+  }
+
   return (
     <Card 
-      onClick={playMovie}
+      onClick={navigateToDetail}
       className="overflow-hidden bg-surface border-0 rounded-xl cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-300 group h-full flex flex-col shadow-lg"
     >
       <div className="relative aspect-[2/3] w-full bg-surface">
@@ -82,7 +88,7 @@ export function MovieCard({ movie, isWatchlistMode = false, onRemove = null, onP
                 onClick={playMovie}
                 className="flex-1 bg-white text-black hover:bg-gray-200 rounded-md py-2 flex items-center justify-center transition-colors font-medium text-sm gap-1"
               >
-                <Play className="w-4 h-4 fill-current" /> Play
+                <Play className="w-4 h-4 fill-current" /> Trailer
               </button>
               
               {isWatchlistMode ? (

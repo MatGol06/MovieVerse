@@ -1,14 +1,51 @@
 import { useEffect, useState } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchTrendingMovies, fetchPopularMovies, fetchTopRatedMovies, searchMovies, fetchFeaturedMovie } from './lib/tmdb';
+import { fetchTrendingMovies, fetchPopularMovies, fetchTopRatedMovies, searchMovies, fetchFeaturedMovie, fetchMovieVideos } from './lib/tmdb';
 import { getWatchlist, removeFromWatchlist } from './lib/api';
 import { useUserStore } from './store/userStore';
 import { MovieCard } from './components/MovieCard';
 import { MovieRow } from './components/MovieRow';
 import { Hero } from './components/Hero';
+import { MovieDetail } from './components/MovieDetail';
 import { Film, Search, Bell, User } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+// Dedicated Trailer Player Component inside the Dialog
+function TrailerPlayer({ movieId, title }) {
+  const { data: videos, isLoading } = useQuery({
+    queryKey: ['videos', movieId],
+    queryFn: () => fetchMovieVideos(movieId),
+    enabled: !!movieId
+  });
+
+  if (isLoading) return <div className="w-full h-full absolute inset-0 flex items-center justify-center bg-black text-white text-lg">Loading Official Trailer...</div>;
+
+  const trailer = videos?.find(vid => vid.type === 'Trailer' && vid.site === 'YouTube') || videos?.find(vid => vid.site === 'YouTube');
+
+  if (!trailer) {
+    return (
+      <div className="w-full h-full absolute inset-0 flex flex-col items-center justify-center bg-black text-white space-y-4">
+        <Film className="w-16 h-16 opacity-50" />
+        <p className="text-xl">No official trailer is available.</p>
+        <Link to={`/movie/${movieId}`} className="mt-4 bg-primary px-6 py-2 rounded font-medium hover:bg-primary/80 transition-colors">
+          Browse Similar Movies
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <iframe 
+      src={`https://www.youtube.com/embed/${trailer.key}?autoplay=1`}
+      className="w-full h-full absolute inset-0 border-0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      title={`Trailer: ${title}`}
+    ></iframe>
+  );
+}
+
 
 function App() {
   const initializeUser = useUserStore((state) => state.initializeUser);
@@ -66,11 +103,12 @@ function App() {
           <Route path="/" element={<HomeView onPlay={openPlayer} />} />
           <Route path="/search" element={<SearchView onPlay={openPlayer} />} />
           <Route path="/watchlist" element={<WatchlistView onPlay={openPlayer} />} />
+          <Route path="/movie/:id" element={<MovieDetail onPlay={openPlayer} />} />
           <Route path="*" element={<HomeView onPlay={openPlayer} />} />
         </Routes>
       </main>
 
-      {/* Global Video Player Modal */}
+      {/* Global Video Player Modal (Official Trailers Only) */}
       <Dialog open={playerConfig.isOpen} onOpenChange={(open) => !open && closePlayer()}>
         <DialogContent className="max-w-6xl w-[95vw] p-0 bg-black border-border overflow-hidden rounded-xl shadow-2xl">
           <DialogHeader className="p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10 pointer-events-none">
@@ -78,12 +116,7 @@ function App() {
           </DialogHeader>
           <div className="w-full aspect-video bg-black relative">
             {playerConfig.isOpen && (
-              <iframe 
-                src={`https://vidsrc.xyz/embed/movie/${playerConfig.movieId}`}
-                className="w-full h-full absolute inset-0 border-0"
-                allowFullScreen
-                title={`Watch ${playerConfig.title}`}
-              ></iframe>
+               <TrailerPlayer movieId={playerConfig.movieId} title={playerConfig.title} />
             )}
           </div>
         </DialogContent>
