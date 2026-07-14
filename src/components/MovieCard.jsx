@@ -1,30 +1,20 @@
-import { Card, CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Plus, Check, Trash, Play } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { addToWatchlist } from "../lib/api"
 import { useUserStore } from "../store/userStore"
 import { useState } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 
-export function MovieCard({ movie, isWatchlistMode = false, onRemove = null }) {
+export function MovieCard({ movie, isWatchlistMode = false, onRemove = null, onPlay }) {
   const queryClient = useQueryClient();
   const userId = useUserStore((state) => state.userId);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const movieId = movie.id || movie.movie_id;
   
   const imageUrl = movie.poster_path 
     ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
     : 'https://via.placeholder.com/500x750?text=No+Poster';
-
-  // Embed URL menggunakan third-party iframe (vidsrc) untuk stream movie percuma
-  const embedUrl = `https://vidsrc.xyz/embed/movie/${movieId}`;
 
   const mutation = useMutation({
     mutationFn: addToWatchlist,
@@ -33,13 +23,11 @@ export function MovieCard({ movie, isWatchlistMode = false, onRemove = null }) {
       queryClient.invalidateQueries({ queryKey: ['watchlist', userId] });
       setTimeout(() => setShowSuccess(false), 2000);
     },
-    onError: (error) => {
-      alert(error.response?.data?.message || "Gagal menambah filem.");
-    }
   });
 
-  const handleAdd = () => {
-    if (!userId) return alert("Sistem pengguna sedang dimuatkan...");
+  const handleAdd = (e) => {
+    e.stopPropagation();
+    if (!userId) return;
     mutation.mutate({
       user_id: userId,
       movie_id: movieId,
@@ -48,73 +36,77 @@ export function MovieCard({ movie, isWatchlistMode = false, onRemove = null }) {
     });
   };
 
-  return (
-    <>
-      <Card className="overflow-hidden bg-surface border-border-subtle hover:border-primary/50 transition-colors group h-full flex flex-col">
-        <div className="relative aspect-[2/3] w-full">
-          <img 
-            src={imageUrl} 
-            alt={movie.title}
-            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
-          />
-          
-          {/* Hover Overlay with Action Buttons */}
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center items-center p-4">
-            
-            {/* Butang Play Utama */}
-            <button 
-              onClick={() => setIsDialogOpen(true)}
-              className="rounded-full bg-primary/90 text-white p-4 hover:bg-primary transition-transform hover:scale-110 shadow-[0_0_20px_rgba(239,68,68,0.5)]"
-            >
-              <Play className="w-8 h-8 ml-1" />
-            </button>
+  const handleRemove = (e) => {
+    e.stopPropagation();
+    if (onRemove) onRemove(movieId);
+  };
 
-            {/* Butang Watchlist di Bawah */}
-            <div className="absolute bottom-4 left-4 right-4">
+  const playMovie = (e) => {
+    e.stopPropagation();
+    if (onPlay) onPlay(movieId, movie.title);
+  }
+
+  return (
+    <Card 
+      onClick={playMovie}
+      className="overflow-hidden bg-surface border-0 rounded-xl cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-300 group h-full flex flex-col shadow-lg"
+    >
+      <div className="relative aspect-[2/3] w-full bg-surface">
+        <img 
+          src={imageUrl} 
+          alt={movie.title}
+          loading="lazy"
+          className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+        />
+        
+        {/* Dark gradient from bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* Hover Content */}
+        <div className="absolute inset-0 flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+            <h3 className="font-bold text-white text-sm md:text-base line-clamp-2 mb-1">{movie.title}</h3>
+            
+            {/* Show rating and year on hover */}
+            {!isWatchlistMode && (
+              <p className="text-xs text-green-400 font-medium mb-2">
+                {movie.release_date ? new Date(movie.release_date).getFullYear() : ''} 
+                <span className="text-gray-300 ml-2">⭐ {movie.vote_average?.toFixed(1) || '0'}</span>
+              </p>
+            )}
+
+            <p className="text-xs text-gray-300 line-clamp-3 mb-4">{movie.overview}</p>
+            
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={playMovie}
+                className="flex-1 bg-white text-black hover:bg-gray-200 rounded-md py-2 flex items-center justify-center transition-colors font-medium text-sm gap-1"
+              >
+                <Play className="w-4 h-4 fill-current" /> Play
+              </button>
+              
               {isWatchlistMode ? (
-                 <button onClick={() => onRemove(movieId)} className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors bg-red-600/90 backdrop-blur-sm text-white hover:bg-red-700 h-10 px-4 py-2 w-full">
-                   <Trash className="w-4 h-4" /> Remove
-                 </button>
+                <button 
+                  onClick={handleRemove}
+                  title="Remove from Watchlist"
+                  className="p-2 rounded-md bg-white/20 hover:bg-red-500/80 text-white backdrop-blur-sm transition-colors"
+                >
+                  <Trash className="w-4 h-4" />
+                </button>
               ) : (
                 <button 
                   onClick={handleAdd}
                   disabled={mutation.isPending || showSuccess}
-                  className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors bg-surface/80 backdrop-blur-sm border border-border-subtle text-white hover:bg-surface h-10 px-4 py-2 w-full disabled:opacity-50"
+                  title="Add to Watchlist"
+                  className="p-2 rounded-md bg-white/20 hover:bg-white/40 text-white backdrop-blur-sm transition-colors"
                 >
-                  {showSuccess ? <><Check className="w-4 h-4 text-green-400" /> Added</> : <><Plus className="w-4 h-4" /> Watchlist</>}
+                  {showSuccess ? <Check className="w-4 h-4 text-green-400" /> : <Plus className="w-4 h-4" />}
                 </button>
               )}
             </div>
           </div>
         </div>
-        <CardContent className="p-4 flex-1">
-          <h3 className="font-semibold text-lg line-clamp-1">{movie.title}</h3>
-          {!isWatchlistMode && (
-            <p className="text-sm text-gray-400 mt-1">
-              {movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'} • ⭐ {movie.vote_average?.toFixed(1) || '0'}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Video Player Modal (Dialog) */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] p-0 bg-black border-border-subtle overflow-hidden sm:rounded-xl">
-          <DialogHeader className="p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10 pointer-events-none">
-            <DialogTitle className="text-white drop-shadow-md text-xl">{movie.title}</DialogTitle>
-          </DialogHeader>
-          <div className="w-full aspect-video bg-black relative">
-            {isDialogOpen && (
-              <iframe 
-                src={embedUrl}
-                className="w-full h-full absolute inset-0 border-0"
-                allowFullScreen
-                title={`Watch ${movie.title}`}
-              ></iframe>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+      </div>
+    </Card>
   )
 }

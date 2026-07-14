@@ -12,9 +12,24 @@ const tmdbApi = axios.create({
   },
 });
 
-export const fetchTrendingMovies = async () => {
-  // Wait shortly to demonstrate loading states if needed
+export const fetchFeaturedMovie = async () => {
   const { data } = await tmdbApi.get('/trending/movie/day');
+  // Get a random movie from top 5 trending to feature
+  return data.results[Math.floor(Math.random() * 5)];
+};
+
+export const fetchTrendingMovies = async () => {
+  const { data } = await tmdbApi.get('/trending/movie/day');
+  return data.results;
+};
+
+export const fetchPopularMovies = async () => {
+  const { data } = await tmdbApi.get('/movie/popular');
+  return data.results;
+};
+
+export const fetchTopRatedMovies = async () => {
+  const { data } = await tmdbApi.get('/movie/top_rated');
   return data.results;
 };
 
