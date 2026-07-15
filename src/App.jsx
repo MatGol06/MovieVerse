@@ -46,7 +46,6 @@ function TrailerPlayer({ movieId, title }) {
   );
 }
 
-
 function App() {
   const initializeUser = useUserStore((state) => state.initializeUser);
   const [isScrolled, setIsScrolled] = useState(false);

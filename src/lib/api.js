@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 const backendApi = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL,
 });
 
 export const getWatchlist = async (userId) => {

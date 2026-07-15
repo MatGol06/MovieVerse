@@ -1,5 +1,4 @@
-import { Play, Plus } from 'lucide-react';
-import { Button } from './ui/button';
+import { Play, Plus, Film } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addToWatchlist } from '../lib/api';
 import { useUserStore } from '../store/userStore';
@@ -13,7 +12,7 @@ export function Hero({ movie, onPlay }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['watchlist', userId] })
   });
 
-  if (!movie) return <div className="w-full h-[70vh] bg-surface animate-pulse" />;
+  if (!movie) return <div className="w-full h-[620px] bg-surface animate-pulse" />;
 
   const backdropUrl = `https://image.tmdb.org/t/p/original${movie.backdrop_path}`;
 
@@ -28,8 +27,8 @@ export function Hero({ movie, onPlay }) {
   };
 
   return (
-    <div className="relative w-full h-[70vh] md:h-[85vh] flex items-center">
-      {/* Background Image with Gradient Overlays */}
+    <div className="relative w-full h-[620px] flex items-center">
+      {/* Background with Dark Overlay */}
       <div className="absolute inset-0 w-full h-full">
         <img 
           src={backdropUrl} 
@@ -40,30 +39,36 @@ export function Hero({ movie, onPlay }) {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       </div>
 
-      {/* Content */}
+      {/* Hero Content */}
       <div className="relative z-10 container mx-auto px-4 md:px-12 max-w-[1440px]">
-        <div className="max-w-2xl space-y-6">
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white drop-shadow-lg leading-tight">
+        <div className="max-w-[800px] space-y-6">
+          <h1 className="text-[36px] md:text-[64px] font-bold tracking-tight text-white leading-[1.1]">
             {movie.title}
           </h1>
           
-          <div className="flex items-center gap-4 text-sm font-medium text-gray-300">
-            <span className="text-green-400 font-bold">{Math.round(movie.vote_average * 10)}% Match</span>
+          <div className="flex items-center gap-4 text-[14px] font-medium text-muted">
+            <span className="text-success font-semibold tracking-wide">IMDb {movie.vote_average?.toFixed(1)}</span>
             <span>{new Date(movie.release_date).getFullYear()}</span>
-            <span className="border border-gray-600 px-2 py-0.5 rounded text-xs">HD</span>
+            <span className="border border-border px-2 py-0.5 rounded text-[12px] uppercase text-white">HD</span>
           </div>
 
-          <p className="text-lg text-gray-200 line-clamp-3 md:line-clamp-4 leading-relaxed drop-shadow-md">
+          <p className="text-[16px] text-muted line-clamp-3 leading-relaxed max-w-[600px]">
             {movie.overview}
           </p>
 
-          <div className="flex items-center gap-4 pt-4">
-            <Button size="lg" onClick={() => onPlay(movie.id, movie.title)} className="gap-2 text-lg px-8 py-6 rounded-md shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
-              <Play className="w-6 h-6 fill-current" /> Play Now
-            </Button>
-            <Button size="lg" variant="secondary" onClick={handleAdd} className="gap-2 text-lg px-8 py-6 rounded-md bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur-sm transition-all hover:scale-105">
-              <Plus className="w-6 h-6" /> Watchlist
-            </Button>
+          <div className="flex flex-wrap items-center gap-4 pt-4">
+            <button 
+              onClick={() => onPlay(movie.id, movie.title)} 
+              className="flex items-center justify-center gap-2 text-[16px] font-semibold px-6 py-3 rounded-[8px] bg-primary hover:bg-primary/90 text-white transition-all duration-300"
+            >
+              <Play className="w-5 h-5 fill-current" /> Watch Trailer
+            </button>
+            <button 
+              onClick={handleAdd} 
+              className="flex items-center justify-center gap-2 text-[16px] font-semibold px-6 py-3 rounded-[8px] bg-surface/50 hover:bg-surface text-white border border-border backdrop-blur-md transition-all duration-300"
+            >
+              <Plus className="w-5 h-5" /> Add to Watchlist
+            </button>
           </div>
         </div>
       </div>
